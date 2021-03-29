@@ -24,14 +24,14 @@ class PriorityQueue:
 
 
     def pop(self):
-        (_, _, item) = heapq.heappop(self.Heap)
+        (_,_, item) = heapq.heappop(self.Heap)
         return item
-
-
+    
     def isEmpty(self):
         return len(self.Heap) == 0
 
-
+    def length(self):
+        return(len(self.Heap))
 """Load puzzles and define the rules of sokoban"""
 
 
@@ -166,7 +166,7 @@ def depthFirstSearch(gameState):
     actions = [[0]] 
     temp = [] # temp sẽ lưu lại đường đi từ điểm bắt đầu cho đến điểm mục tiêu
     while frontier: # nếu frontier khác rỗng thì:
-        node = frontier.pop() # gán node bằng phần tử cuối cùng trong danh sách frontier ra ( có nghĩa là vị trí vừa mới được thêm vào theo nguyên tắc  ) 
+        node = frontier.pop() # gán node bằng phần tử cuối cùng trong danh sách frontier ra ( có nghĩa là vị trí vừa mới được thêm vào theo nguyên tắc FILO ) 
         node_action = actions.pop()
         if isEndState(node[-1][-1]):  # kiểm tra xem node hiện tại là node mục tiêu thì:
             temp += node_action[1:] # temp sẽ được gán bằng tất cả các hành động mà nó đã đi từ lúc bắt đầu cho đến khi tìm được mục tiêu
@@ -198,15 +198,14 @@ def breadthFirstSearch(gameState):
         if isEndState(node[-1][-1]):  # kiểm tra xem node hiện tại là node mục tiêu thì:
             temp += node_action[1:] # temp sẽ được gán bằng tất cả các hành động mà nó đã đi từ lúc bắt đầu cho đến khi tìm được mục tiêu
             break
-        if node[-1] not in exploredSet: # nếu điểm bắt đầu của cái thùng không nằm trong danh sách các vị trí mà cái thùng đã được đặt thì
-            exploredSet.add(node[-1]) # lưu vị trí hiện tại của cái thùng vào trong exploreSet
+        if node[-1] not in exploredSet: # nếu vị trí hiện tại của cái thùng và người chơi không nằm trong danh sách các vị trí đã đi qua thì
+            exploredSet.add(node[-1]) # lưu vị trí hiện tại của cái thùng và người chơi vào trong exploreSet
             for action in legalActions(node[-1][0], node[-1][1]): # duyệt các hành động hợp lệ
                 newPosPlayer, newPosBox = updateState(node[-1][0], node[-1][1], action) # cập nhật vị trí của người chơi và thùng
                 if isFailed(newPosBox):
                     continue
-                frontier.append(node + [(newPosPlayer, newPosBox)]) # thêm các vị trí mới vào frontier 
-                actions.append(node_action + [action[-1]]) # thêm các hành động hợp lệ mới vào actions
-    
+                frontier.appendleft(node + [(newPosPlayer, newPosBox)]) # thêm các vị trí mới vào frontier 
+                actions.appendleft(node_action + [action[-1]]) # thêm các hành động hợp lệ mới vào actions
     return temp
     
 def cost(actions):
@@ -225,8 +224,27 @@ def uniformCostSearch(gameState):
     actions = PriorityQueue()
     actions.push([0], 0)
     temp = []
+    frontierIndex = {}
+    count =0
+    frontierIndex[startState] = [0,(beginPlayer,beginBox)]
     ### Implement uniform cost search here
-    
+    while True:
+        if frontier.isEmpty(): # nếu frontier rỗng thì thoát ra ( không tìm ra giải pháp)
+            return
+        node = frontier.pop() # gán node bằng phần tử có chi phí nhỏ nhất trong hàng đợi 
+        node_action = actions.pop() 
+        if isEndState(node[-1][-1]): # kiểm tra xem node hiện tại là node mục tiêu thì:
+            temp += node_action[1:] # temp sẽ được gán bằng tất cả các hành động mà nó đã đi từ lúc bắt đầu cho đến khi tìm được mục tiêu
+            break
+        
+        if node[-1] not in exploredSet: # nếu vị trí hiện tại của cái thùng và người chơi không nằm trong danh sách các vị trí đã đi qua thì
+            exploredSet.add(node[-1]) # lưu vị trí hiện tại của cái thùng và người chơi vào trong exploreSet)
+            for action in legalActions(node[-1][0], node[-1][1]): # duyệt các hành động hợp lệ
+                newPosPlayer, newPosBox = updateState(node[-1][0], node[-1][1], action) # cập nhật vị trí mới của người chơi và thùng
+                if isFailed(newPosBox):
+                    continue
+                frontier.push(node + [(newPosPlayer, newPosBox)],cost(node_action[1:] + [action[-1]])) # thêm các vị trí mới vào frontier đồng thời cập nhật lại chi phí
+                actions.push(node_action + [action[-1]], cost(node_action[1:] + [action[-1]])) # thêm các hành động hợp lệ mới vào actions
     return temp
 
 """Read command"""
